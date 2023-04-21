@@ -1,0 +1,66 @@
+
+    @page "/blog"
+    @using System.Net.Http
+    @using System.Net.Http.Json
+    @using System.Collections.Generic
+    @using System.Threading.Tasks
+    @using BlogApp.Models
+    @inject HttpClient Http
+    @using System.Text.Json;
+
+
+    <form @onsubmit="AddBlogEntry">
+        <input name="title" placeholder="Title" @bind="NewBlogEntry.Title"/>
+        <input name="content" placeholder="Content" @bind="NewBlogEntry.Content"/>
+        <button type="submit">Add</button>
+    </form>
+
+
+
+    @if (Posts == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else{
+  
+        <ul>
+        @foreach (var post in Posts)
+        {
+            <li>
+                <h3>@post.Title</h3>
+                <p>@post.Content</p>
+                <small>@post.PostedTime</small>
+                <button @onclick="(e) => DeleteBlogEntry(post.BlogModelId)">Delete</button>
+            </li>
+             
+
+        }
+     </ul>
+    }
+    
+
+    @code {
+        private List<BlogModel> Posts  { get; set; } = new List<BlogModel>();
+        private BlogModel NewBlogEntry { get; set; } = new BlogModel();
+        private uint? id = null;
+
+        protected override async Task OnInitializedAsync()
+        {
+            Posts = await Http.GetFromJsonAsync<List<BlogModel>>("http://localhost:5241/api/blog");
+           
+        }
+
+        private async Task AddBlogEntry()
+    {
+        await Http.PostAsJsonAsync("http://localhost:5241/api/blog", NewBlogEntry);
+        NewBlogEntry = new BlogModel();
+        Posts = await Http.GetFromJsonAsync<List<BlogModel>>("http://localhost:5241/api/blog");
+    }
+
+     private async Task DeleteBlogEntry(uint id)
+    {
+       await Http.DeleteAsync(string.Format("http://localhost:5241/api/blog/{0}", id));
+
+        Posts = await Http.GetFromJsonAsync<List<BlogModel>>("http://localhost:5241/api/blog");
+    }
+    }
